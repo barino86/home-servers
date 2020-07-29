@@ -1,0 +1,15 @@
+[http.routers]
+  [http.routers.plex-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`plex.barinohub.com`)"
+      service = "plex-svc"
+      middlewares = ["chain-oauth"]
+      [http.routers.plex-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.plex-svc]
+    [http.services.plex-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.plex-svc.loadBalancer.servers]]
+        url = "http://192.168.1.177:32400"
