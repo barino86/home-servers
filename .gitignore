@@ -1,10 +1,12 @@
 
-acme.json
-heimdall/
-organizr/
-portainer/
-shared/
-transmission-vpn/
+*acme.json
+*heimdall/
+*organizr/
+*portainer/
+*shared/
+*transmission-vpn/
+
+*.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
