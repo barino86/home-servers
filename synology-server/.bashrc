@@ -9,7 +9,7 @@ alias ll='ls -alh'
 alias dirsize='sudo du -hx --max-depth=1'
 
 # SYSTEM
-alias pushss='pushd /volume1/ds918/home-servers/synology-server'
+alias pushss='pushd /volume1/ds918/development/home-servers/synology-server'
 alias pushdc='pushd /volume1/docker'
 
 # DOCKER
