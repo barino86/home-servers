@@ -1,0 +1,15 @@
+[http.routers]
+  [http.routers.port-desk-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`port-desk.barinohub.com`)"
+      service = "port-desk-svc"
+      middlewares = ["chain-oauth"]
+      [http.routers.port-desk-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.port-desk-svc]
+    [http.services.port-desk-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.port-desk-svc.loadBalancer.servers]]
+        url = "http://192.168.1.200:9000"
