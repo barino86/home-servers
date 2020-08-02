@@ -1,0 +1,23 @@
+[http.routers]
+  [http.routers.sonarr-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`sonarr.barinohub.com`)"
+      service = "sonarr-svc"
+      middlewares = ["chain-oauth"]
+      priority=99
+      [http.routers.sonarr-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+  [http.routers.sonarr-rtr-bypass]
+      entryPoints = ["https"]
+      rule = "Headers(`X-Api-Key`, `a02f9a82fc124b768e831c73330f2658`) || Query(`apikey`, `a02f9a82fc124b768e831c73330f2658`)"
+      service = "sonarr-svc"
+      middlewares = ["chain-no-auth"]
+      priority=100
+
+[http.services]
+  [http.services.sonarr-svc]
+    [http.services.sonarr-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.sonarr-svc.loadBalancer.servers]]
+        url = "http://192.168.1.200:8989"

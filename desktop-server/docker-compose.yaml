@@ -1,25 +1,25 @@
 version: "3.7"
 
 ########################### NETWORKS
-# docker network create t2_desk_proxy
+# docker network create dsk_proxy
 # Alternatively, you can specify the gateway and subnet to use
 # docker network create --gateway 192.168.90.1 --subnet 192.168.90.0/24 t2_proxy
 # Subnet range 192.168.0.0/16 covers 192.168.0.0 to 192.168.255.255
 networks:
-  t2_desk_proxy:
+  dsk_proxy:
     external:
-      name: t2_desk_proxy
+      name: dsk_proxy
   default:
     driver: bridge
 
 ########################### SERVICES
 services:
-  desktop-netdata:
-    container_name: desktop-netdata
+  dsk-netdata:
+    container_name: dsk-netdata
     image: netdata/netdata
     restart: unless-stopped
     networks:
-      - t2_desk_proxy
+      - dsk_proxy
     security_opt:
       - apparmor:unconfined
     # hostname: example.com # set to fqdn of host
@@ -44,13 +44,18 @@ services:
       start_period: "10s"
       interval: "5s"
     networks:
-      - t2_desk_proxy
+      - dsk_proxy
       # t2_proxy:
       #   ipv4_address: 192.168.90.90
     security_opt:
       - no-new-privileges:true
     ports:
-      - "9091:9091"
+      - "$TRANSMISSION_PORT:9091"
+      - "$SABNZBD_PORT:8080"
+      - "$JACKETT_PORT:9117"
+      - "$NZBHYDRA_PORT:5076"
+      - "$RADARR_PORT:7878"
+      - "$SONARR_PORT:8989"
     cap_add:
       - NET_ADMIN
     devices:
@@ -62,20 +67,20 @@ services:
       # - /etc/localtime:/etc/localtime:ro
       - $DOCKERDIR/transmission-vpn/data:/data
       - $DOCKERDIR/transmission-vpn/config:/config
-      - $DOCKERDIR/Downloads:/downloads
+      - $DOCKERDIR/downloads/trans:/downloads
     environment:
       OPENVPN_PROVIDER: EXPRESSVPN
       OPENVPN_USERNAME: $OPENVPN_USERNAME
       OPENVPN_PASSWORD: $OPENVPN_PASSWORD
       OPENVPN_CONFIG: "my_expressvpn_usa_-_dallas_-_2_udp"
       OPENVPN_OPTS: --inactive 3600 --ping 10 --ping-exit 60
-      LOCAL_NETWORK: 192.168.1.0/24
+      LOCAL_NETWORK: $LOCAL_NETWORK
       PUID: $PUID
       PGID: $PGID
       TZ: $TZ
       UMASK_SET: 2
       TRANSMISSION_RPC_AUTHENTICATION_REQUIRED: "true"
-      TRANSMISSION_RPC_HOST_WHITELIST: "127.0.0.1,192.168.*.*"
+      TRANSMISSION_RPC_HOST_WHITELIST: "127.0.0.1,$SERVER_IP"
       TRANSMISSION_RPC_PASSWORD: $TRANSMISSION_RPC_PASSWORD
       TRANSMISSION_RPC_USERNAME: $TRANSMISSION_RPC_USERNAME
       TRANSMISSION_UMASK: 002
@@ -93,3 +98,200 @@ services:
       TRANSMISSION_WATCH_DIR: /downloads
       TRANSMISSION_WATCH_DIR_ENABLED: "true"
       TRANSMISSION_DOWNLOAD_DIR: /downloads/completed
+
+  # SABnzbd - Binary newsgrabber (NZB downloader)
+  # Disable SABNnzbd's built-in HTTPS support for traefik proxy to work
+  # Needs trailing / if using PathPrefix
+  sabnzbd:
+    image: linuxserver/sabnzbd:latest
+    depends_on:
+      - transmission-vpn
+    container_name: sabnzbd
+    restart: unless-stopped
+    # networks:
+    #   - t2_proxy
+    network_mode: service:transmission-vpn
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - "$SABNZBD_PORT:8080"
+    volumes:
+      - $DOCKERDIR/sabnzbd:/config
+      - $DOCKERDIR/downloads/sabnzbd:/downloads
+      - $DOCKERDIR/downloads/sabnzbd/incomplete:/incomplete-downloads
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+      UMASK_SET: 002
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers Auth Bypass
+    #   - "traefik.http.routers.sabnzbd-rtr-bypass.entrypoints=https"
+    #   - "traefik.http.routers.sabnzbd-rtr-bypass.rule=Query(`apikey`, `$SABNZBD_API_KEY`)"
+    #   - "traefik.http.routers.sabnzbd-rtr-bypass.priority=100"
+    #   ## HTTP Routers Auth
+    #   - "traefik.http.routers.sabnzbd-rtr.entrypoints=https"
+    #   - "traefik.http.routers.sabnzbd-rtr.rule=HostHeader(`sabnzbd.$DOMAINNAME`)"
+    #   - "traefik.http.routers.sabnzbd-rtr.priority=99"
+    #   ## Middlewares
+    #   - "traefik.http.routers.sabnzbd-rtr-bypass.middlewares=chain-no-auth@file"
+    #   - "traefik.http.routers.sabnzbd-rtr.middlewares=chain-authelia@file"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.sabnzbd-rtr.service=sabnzbd-svc"
+    #   - "traefik.http.routers.sabnzbd-rtr-bypass.service=sabnzbd-svc"
+    #   - "traefik.http.services.sabnzbd-svc.loadbalancer.server.port=8080"
+
+  # Jackett - Torrent proxy
+  # Set url_base in Jackett settings if using PathPrefix
+  jackett:
+    image: linuxserver/jackett:latest
+    depends_on:
+      - transmission-vpn
+    container_name: jackett
+    restart: unless-stopped
+    # networks:
+    #   - t2_proxy
+    network_mode: service:transmission-vpn
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - "$JACKETT_PORT:9117"
+    volumes:
+      - $DOCKERDIR/jackett:/config
+      - $DOCKERDIR/downloads/jackett:/downloads
+      # - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers
+    #   - "traefik.http.routers.jackett-rtr.entrypoints=https"
+    #   - "traefik.http.routers.jackett-rtr.rule=HostHeader(`jackett.$DOMAINNAME`)"
+    #   ## Middlewares
+    #   - "traefik.http.routers.jackett-rtr.middlewares=chain-authelia@file"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.jackett-rtr.service=jackett-svc"
+    #   - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117"
+
+  # NZBHydra2 - NZB meta search
+  hydra:
+    image: linuxserver/hydra2:latest
+    depends_on:
+      - transmission-vpn
+    container_name: hydra
+    restart: unless-stopped
+    # networks:
+    #   - t2_proxy
+    network_mode: service:transmission-vpn
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - "$NZBHYDRA_PORT:5076"
+    volumes:
+      - $DOCKERDIR/hydra2:/config
+      - $DOCKERDIR/downloads/hydra2:/downloads
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers
+    #   - "traefik.http.routers.hydra-rtr.entrypoints=https"
+    #   - "traefik.http.routers.hydra-rtr.rule=HostHeader(`hydra.$DOMAINNAME`)"
+    #   ## Middlewares
+    #   - "traefik.http.routers.hydra-rtr.middlewares=chain-authelia@file"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.hydra-rtr.service=hydra-svc"
+    #   - "traefik.http.services.hydra-svc.loadbalancer.server.port=5076"
+
+  # Radarr - Movie management
+  # Set url_base in radarr settings if using PathPrefix
+  radarr:
+    # image: aront/radarr #for mp4_automator support
+    image: linuxserver/radarr:preview
+    depends_on:
+      - transmission-vpn
+    container_name: radarr
+    restart: unless-stopped
+    # networks:
+    #   - dsk_proxy
+    network_mode: service:transmission-vpn
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - "$RADARR_PORT:7878"
+    volumes:
+      - $DOCKERDIR/radarr:/config
+      - $DOCKERDIR/downloads/radarr:/downloads
+      - $DOCKERDIR/media:/nas
+      # - $DOCKERDIR/shared/mp4_automator:/config_mp4_automator
+      # - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers Auth Bypass
+    #   - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
+    #   - "traefik.http.routers.radarr-rtr-bypass.rule=Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`)"
+    #   - "traefik.http.routers.radarr-rtr-bypass.priority=100"
+    #   ## HTTP Routers Auth
+    #   - "traefik.http.routers.radarr-rtr.entrypoints=https"
+    #   - "traefik.http.routers.radarr-rtr.rule=HostHeader(`radarr.$DOMAINNAME`)"
+    #   - "traefik.http.routers.radarr-rtr.priority=99"
+    #   ## Middlewares
+    #   - "traefik.http.routers.radarr-rtr-bypass.middlewares=chain-no-auth@file"
+    #   - "traefik.http.routers.radarr-rtr.middlewares=chain-authelia@file"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.radarr-rtr.service=radarr-svc"
+    #   - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
+    #   - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+
+  # Sonarr - TV Shows management
+  # Set url_base in sonarr settings if using PathPrefix
+  sonarr:
+    # image: aront/sonarr  #for mp4_automator support
+    image: linuxserver/sonarr:preview
+    depends_on:
+      - transmission-vpn
+    container_name: sonarr
+    restart: unless-stopped
+    # networks:
+    #   - t2_proxy
+    network_mode: service:transmission-vpn
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - "$SONARR_PORT:8989"
+    volumes:
+      - $DOCKERDIR/sonarr:/config
+      - $DOCKERDIR/downloads/sonarr:/downloads
+      - $DOCKERDIR/media:/nas
+      # - "/etc/localtime:/etc/localtime:ro"
+    #   - "$DOCKERDIR/shared/mp4_automator:/config_mp4_automator:rw"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers Auth Bypass
+    #   - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
+    #   - "traefik.http.routers.sonarr-rtr-bypass.rule=Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`)"
+    #   - "traefik.http.routers.sonarr-rtr-bypass.priority=100"
+    #   ## HTTP Routers Auth
+    #   - "traefik.http.routers.sonarr-rtr.entrypoints=https"
+    #   - "traefik.http.routers.sonarr-rtr.rule=HostHeader(`sonarr.$DOMAINNAME`)"
+    #   - "traefik.http.routers.sonarr-rtr.priority=99"
+    #   ## Middlewares
+    #   - "traefik.http.routers.sonarr-rtr-bypass.middlewares=chain-no-auth@file"
+    #   - "traefik.http.routers.sonarr-rtr.middlewares=chain-authelia@file"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
+    #   - "traefik.http.routers.sonarr-rtr-bypass.service=sonarr-svc"
+    #   - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
