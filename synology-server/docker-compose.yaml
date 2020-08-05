@@ -2,6 +2,7 @@ version: "3.7"
 
 ########################### NETWORKS
 # docker network create t2_proxy
+# docker network create socket_proxy
 # Alternatively, you can specify the gateway and subnet to use
 # docker network create --gateway 192.168.90.1 --subnet 192.168.90.0/24 t2_proxy
 # Subnet range 192.168.0.0/16 covers 192.168.0.0 to 192.168.255.255
@@ -11,6 +12,9 @@ networks:
       name: t2_proxy
   default:
     driver: bridge
+  socket_proxy:
+    external:
+      name: socket_proxy
 
 ########################### SERVICES
 services:
@@ -22,51 +26,108 @@ services:
   # touch $DOCKERDIR/traefik2/acme/acme.json
   # chmod 600 $DOCKERDIR/traefik2/acme/acme.json
   # touch $DOCKERDIR/traefik2/traefik.log
+
+  # Docker Socket Proxy - Security Enchanced Proxy for Docker Socket
+  socket-proxy:
+    container_name: socket-proxy
+    image: tecnativa/docker-socket-proxy
+    restart: unless-stopped
+    networks:
+      - socket_proxy
+        # ipv4_address: 192.168.91.254 # You can specify a static IP
+    privileged: true
+    ports:
+     - "$SOCKET_PROXY_PORT:2375"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - LOG_LEVEL=info # debug,info,notice,warning,err,crit,alert,emerg
+      ## Variables match the URL prefix (i.e. AUTH blocks access to /auth/* parts of the API, etc.).
+      # 0 to revoke access.
+      # 1 to grant access.
+      ## Granted by Default
+      - EVENTS=1
+      - PING=1
+      - VERSION=1
+      ## Revoked by Default
+      # Security critical
+      - AUTH=0
+      - SECRETS=0
+      - POST=1 # Ouroboros
+      # Not always needed
+      - BUILD=0
+      - COMMIT=0
+      - CONFIGS=0
+      - CONTAINERS=1 # Traefik, portainer, etc.
+      - DISTRIBUTION=0
+      - EXEC=0
+      - IMAGES=1 # Portainer
+      - INFO=1 # Portainer
+      - NETWORKS=1 # Portainer
+      - NODES=0
+      - PLUGINS=0
+      - SERVICES=1 # Portainer
+      - SESSION=0
+      - SWARM=0
+      - SYSTEM=0
+      - TASKS=1 # Portaienr
+      - VOLUMES=1 # Portainer
+
   traefik:
     container_name: traefik
-    image: traefik:2.2.1 # the chevrotin tag refers to v2.2.x but introduced a breaking change in 2.2.2
+    image: traefik:2.2.1                                                                  # the chevrotin tag refers to v2.2.x but introduced a breaking change in 2.2.2
+    depends_on:
+      - socket-proxy
     restart: unless-stopped
     command: # CLI arguments
-      - --global.checkNewVersion=true
-      - --global.sendAnonymousUsage=true
-      - --entryPoints.http.address=:80
-      - --entryPoints.https.address=:443
-        # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
-      - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/12,172.64.0.0/13,131.0.72.0/22
-      - --entryPoints.traefik.address=:8080
+    # GLOBAL AND LOGS
       - --api=true
       # - --api.insecure=true
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
-      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --log.level=DEBUG                                                                   # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - --accessLog=true
       - --accessLog.filePath=/traefik.log
-      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      - --accessLog.bufferingSize=100                                                       # Configuring a buffer of 100 lines
       - --accessLog.filters.statusCodes=400-499
-      - --providers.docker=true
-      - --providers.docker.endpoint=unix:///var/run/docker.sock
-      - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.$DOMAINNAME`)
-      - --providers.docker.exposedByDefault=false
+      - --global.checkNewVersion=true
+      - --global.sendAnonymousUsage=true
+
+    # ENTRY POINTS
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+      # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
+      - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/12,172.64.0.0/13,131.0.72.0/22
+      - --entryPoints.traefik.address=:8080
       # Add dns-cloudflare as default certresolver for all services. Also enables TLS and no need to specify on individual services.
       - --entrypoints.https.http.tls.certresolver=dns-cloudflare
       - --entrypoints.https.http.tls.domains[0].main=$DOMAINNAME
       - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAINNAME
+
+    # PROVIDERS
+      - --providers.docker=true
+      # - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.$DOMAINNAME`)
+      - --providers.docker.exposedByDefault=false
       - --providers.docker.network=t2_proxy
       - --providers.docker.swarmMode=false
-      - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory.
-      # - --providers.file.filename=/path/to/file # Load dynamic configuration from a file.
-      - --providers.file.watch=true # Only works on top level files in the rules folder
+      - --providers.file.directory=/rules                                                   # Load dynamic configuration from one or more .toml or .yml files in a directory.
+      # - --providers.file.filename=/path/to/file                                           # Load dynamic configuration from a file.
+      - --providers.file.watch=true                                                         # Only works on top level files in the rules folder
+    # CERT RESOLVERS
       # - --certificatesResolvers.dns-cloudflare.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
       - --certificatesResolvers.dns-cloudflare.acme.email=$CLOUDFLARE_EMAIL
       - --certificatesResolvers.dns-cloudflare.acme.storage=/acme.json
       - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.provider=cloudflare
       - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
-      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+      - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=90        # To delay DNS check and reduce LE hitrate
     # networks:
     #   t2_proxy:
     #     ipv4_address: 192.168.90.254 # You can specify a static IP
     networks:
       - t2_proxy
+      - socket_proxy
     security_opt:
       - no-new-privileges:true
     ports:
@@ -84,7 +145,7 @@ services:
         mode: host
     volumes:
       - $DOCKERDIR/traefik2/rules:/rules
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       - $DOCKERDIR/traefik2/acme/acme.json:/acme.json
       - $DOCKERDIR/traefik2/traefik.log:/traefik.log
       - $DOCKERDIR/shared:/shared
@@ -145,16 +206,19 @@ services:
   portainer:
     container_name: portainer
     image: portainer/portainer:latest
+    depends_on:
+      - socket-proxy
     restart: unless-stopped
-    command: -H unix:///var/run/docker.sock
+    # command: -H unix:///var/run/docker.sock
     networks:
       - t2_proxy
+      - socket_proxy
     security_opt:
       - no-new-privileges:true
 #    ports:
 #      - "$PORTAINER_PORT:9000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       - $DOCKERDIR/portainer/data:/data
     environment:
       - TZ=$TZ
@@ -229,12 +293,17 @@ services:
   netdata:
     container_name: netdata
     image: netdata/netdata
+    depends_on:
+      - socket-proxy
     restart: unless-stopped
     networks:
       - t2_proxy
+      - socket_proxy
     security_opt:
       - apparmor:unconfined
     # hostname: example.com # set to fqdn of host
+    environment:
+      - DOCKER_HOST=socket-proxy:2375
     ports:
       - "$NETDATA_PORT:19999"
     cap_add:
@@ -242,7 +311,7 @@ services:
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -309,11 +378,13 @@ services:
   cf-companion:
     container_name: cf-companion
     image: tiredofit/traefik-cloudflare-companion:latest
+    depends_on:
+      - socket-proxy
     restart: unless-stopped
     networks:
-      - t2_proxy
+      - socket_proxy
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TIMEZONE=$TZ
       - TRAEFIK_VERSION=2
@@ -324,6 +395,7 @@ services:
       - DOMAIN1=$DOMAINNAME
       - DOMAIN1_ZONE_ID=$CLOUDFLARE_ZONEID # Copy from Cloudflare Overview page
       - DOMAIN1_PROXIED=TRUE
+      - DOCKER_HOST=tcp://socket-proxy:2375
     labels:
     #   # Add hosts specified in rules here to force cf-companion to create the CNAMEs
     #   # Since cf-companion creates CNAMEs based on host rules, this a workaround for non-docker/external apps
