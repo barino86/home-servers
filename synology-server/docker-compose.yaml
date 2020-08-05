@@ -383,7 +383,7 @@ services:
     restart: unless-stopped
     networks:
       - socket_proxy
-    volumes:
+    # volumes:
       # - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TIMEZONE=$TZ
