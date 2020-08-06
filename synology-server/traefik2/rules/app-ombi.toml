@@ -1,0 +1,15 @@
+[http.routers]
+  [http.routers.ombi-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`ombi.barinohub.com`)"
+      service = "ombi-svc"
+      middlewares = ["chain-oauth"]
+      [http.routers.ombi-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.ombi-svc]
+    [http.services.ombi-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.ombi-svc.loadBalancer.servers]]
+        url = "http://192.168.1.200:3579"
