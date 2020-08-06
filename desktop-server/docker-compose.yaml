@@ -88,23 +88,23 @@ services:
       - /sys:/host/sys:ro
 
   # Portainer - WebUI for Containers
-  portainer:
-    container_name: portainer
-    image: portainer/portainer:latest
-    depends_on:
-      - socket-proxy
-    restart: unless-stopped
-    networks:
-      - dsk_proxy
-      - socket_proxy
-    security_opt:
-      - no-new-privileges:true
-    ports:
-     - "$PORTAINER_PORT:9000"
-    volumes:
-      - $DOCKERDIR/portainer/data:/data
-    environment:
-      - TZ=$TZ
+  # portainer:
+  #   container_name: portainer
+  #   image: portainer/portainer:latest
+  #   depends_on:
+  #     - socket-proxy
+  #   restart: unless-stopped
+  #   networks:
+  #     - dsk_proxy
+  #     - socket_proxy
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   ports:
+  #    - "$PORTAINER_PORT:9000"
+  #   volumes:
+  #     - $DOCKERDIR/portainer/data:/data
+  #   environment:
+  #     - TZ=$TZ
 
   # Ombi - Media Requests
   ombi:
