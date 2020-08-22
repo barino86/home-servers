@@ -10,7 +10,7 @@
 
   [http.routers.sabnzb-rtr-bypass]
       entryPoints = ["https"]
-      rule = "Query(`apikey`, `$SABNZBD_API_KEY`)"
+      rule = "Query(`apikey`, `72dad5ed4e5ee3150a53f54886462a4b`)"
       service = "sabnzb-svc"
       middlewares = ["chain-no-auth"]
       priority=100
@@ -20,4 +20,4 @@
     [http.services.sabnzb-svc.loadBalancer]
       passHostHeader = true
       [[http.services.sabnzb-svc.loadBalancer.servers]]
-        url = "http://192.168.1.200:8080"
+        url = "http://192.168.1.200:8081"

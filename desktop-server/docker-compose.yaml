@@ -147,6 +147,7 @@ services:
       - "$SABNZBD_PORT:8080"
       - "$JACKETT_PORT:9117"
       - "$NZBHYDRA_PORT:5076"
+      - "443:443"
       - "$RADARR_PORT:7878"
       - "$SONARR_PORT:8989"
     cap_add:
@@ -235,7 +236,7 @@ services:
 
   # NZBHydra2 - NZB meta search
   hydra:
-    image: linuxserver/hydra2:latest
+    image: linuxserver/nzbhydra2:latest
     depends_on:
       - transmission-vpn
     container_name: hydra
@@ -277,6 +278,8 @@ services:
   # Set url_base in sonarr settings if using PathPrefix
   sonarr:
     # image: aront/sonarr  #for mp4_automator support
+    # build:
+    #   context: "./specialized_images/sonarr"
     image: linuxserver/sonarr:preview
     depends_on:
       - transmission-vpn
@@ -289,6 +292,7 @@ services:
       - $DOCKERDIR/sonarr:/config
       - $DOCKERDIR/downloads:/downloads
       - /Volumes/Media:/nas
+      # - /Users/barino/Development/home-servers/desktop-server/cron_tasks/sonarr_healthcheck:/etc/cron.d/sonarr_healthcheck
     #   - "$DOCKERDIR/shared/mp4_automator:/config_mp4_automator:rw"
     environment:
       PUID: $PUID
