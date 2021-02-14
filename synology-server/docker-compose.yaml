@@ -387,21 +387,21 @@ services:
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
 
-  homebridge:
-    image: oznu/homebridge:latest
-    container_name: homebridge
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      TZ: $TZ
-      PUID: $PUID
-      PGID: $PGID
-      HOMEBRIDGE_CONFIG_UI: 1
-      HOMEBRIDGE_CONFIG_UI_PORT: $HOMEBRIDGEUI_PORT
-    volumes:
-      - $DOCKERDIR/homebridge:/homebridge
-    labels:
-      - "traefik.enable=false"
+  # homebridge:
+  #   image: oznu/homebridge:latest
+  #   container_name: homebridge
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   environment:
+  #     TZ: $TZ
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     HOMEBRIDGE_CONFIG_UI: 1
+  #     HOMEBRIDGE_CONFIG_UI_PORT: $HOMEBRIDGEUI_PORT
+  #   volumes:
+  #     - $DOCKERDIR/homebridge:/homebridge
+  #   labels:
+  #     - "traefik.enable=false"
 
   # Cloudflare DDNS - Dynamic DNS Updater
   cf-ddns:
