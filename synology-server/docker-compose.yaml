@@ -448,3 +448,4 @@ services:
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`radarr.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`sabnzb.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`sonarr.$DOMAINNAME`)"
+      - "traefik.http.routers.cf-companion-rtr.rule=Host(`homebridge.$DOMAINNAME`)"
