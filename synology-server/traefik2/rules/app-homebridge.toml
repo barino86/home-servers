@@ -1,0 +1,15 @@
+[http.routers]
+  [http.routers.homebridge-rtr]
+      entryPoints = ["https"]
+      rule = "Host(`homebridge.barinohub.com`)"
+      service = "homebridge-svc"
+      middlewares = ["chain-oauth"]
+      [http.routers.homebridge-rtr.tls]
+        certresolver = "dns-cloudflare"
+
+[http.services]
+  [http.services.homebridge-svc]
+    [http.services.homebridge-svc.loadBalancer]
+      passHostHeader = true
+      [[http.services.homebridge-svc.loadBalancer.servers]]
+        url = "http://192.168.1.177:8581"

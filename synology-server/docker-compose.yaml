@@ -400,16 +400,6 @@ services:
       HOMEBRIDGE_CONFIG_UI_PORT: $HOMEBRIDGEUI_PORT
     volumes:
       - $DOCKERDIR/homebridge:/homebridge
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.homebridge-rtr.entrypoints=https"
-      - "traefik.http.routers.homebridge-rtr.rule=Host(`homebridge.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.homebridge-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.homebridge-rtr.service=homebridge-svc"
-      - "traefik.http.services.homebridge-svc.loadbalancer.server.port=8581"
 
   # Cloudflare DDNS - Dynamic DNS Updater
   cf-ddns:
