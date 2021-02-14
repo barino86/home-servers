@@ -400,6 +400,8 @@ services:
       HOMEBRIDGE_CONFIG_UI_PORT: $HOMEBRIDGEUI_PORT
     volumes:
       - $DOCKERDIR/homebridge:/homebridge
+    labels:
+      - "traefik.enable=false"
 
   # Cloudflare DDNS - Dynamic DNS Updater
   cf-ddns:
