@@ -395,28 +395,28 @@ services:
     container_name: home-assistant
     image: homeassistant/home-assistant:stable
     restart: unless-stopped
-    networks:
-      - t2_proxy
-    # network_mode: host
-    ports:
-      - "$HASSIO_PORT:8123"
-      - "$HASSIO_HOMEKIT_PORT:51827"
+    # networks:
+    #   - t2_proxy
+    network_mode: host
+    # ports:
+    #   - "$HASSIO_PORT:8123"
+    #   - "$HASSIO_HOMEKIT_PORT:51827"
     volumes:
       - $DOCKERDIR/homeassistant:/config
     environment:
       PUID: $PUID
       PGID: $PGID
       TZ: $TZ
-    labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.homeassistant-rtr.entrypoints=https"
-      - "traefik.http.routers.homeassistant-rtr.rule=Host(`hassio.$DOMAINNAME`)"
-      ## Middlewares
-      - "traefik.http.routers.homeassistant-rtr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      - "traefik.http.routers.homeassistant-rtr.service=homeassistant-svc"
-      - "traefik.http.services.homeassistant-svc.loadbalancer.server.port=8123"
+    # labels:
+    #   - "traefik.enable=true"
+    #   ## HTTP Routers
+    #   - "traefik.http.routers.homeassistant-rtr.entrypoints=https"
+    #   - "traefik.http.routers.homeassistant-rtr.rule=Host(`hassio.$DOMAINNAME`)"
+    #   ## Middlewares
+    #   - "traefik.http.routers.homeassistant-rtr.middlewares=chain-oauth@file"
+    #   ## HTTP Services
+    #   - "traefik.http.routers.homeassistant-rtr.service=homeassistant-svc"
+    #   - "traefik.http.services.homeassistant-svc.loadbalancer.server.port=8123"
 
   # homebridge:
   #   image: oznu/homebridge:latest
