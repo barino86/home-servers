@@ -1,0 +1,36 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "[%key:common::config_flow::data::username%]",
+          "password": "[%key:common::config_flow::data::password%]"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "hd_stream": "Stream camera in HD",
+          "rtsp_stream": "Select which RTSP camera stream to use"
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "doorbell_ding": "Doorbell pressed",
+      "motion_detected": "Motion detected"
+    }
+  }
+}

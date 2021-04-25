@@ -1,0 +1,13 @@
+version: '3'
+services:
+  homeassistant:
+    container_name: home-assistant
+    image: homeassistant/home-assistant:stable
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - $DOCKERDIR/homeassistant:/config
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ

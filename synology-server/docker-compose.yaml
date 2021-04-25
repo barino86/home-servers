@@ -391,32 +391,32 @@ services:
   # Need to set the mac address in the ./avahi/homeassistant.service file, then copy it to the /etc/avahi/services/ folder
   # Then need to run a sudo synoservice --restart avahi command to restart the avahi service.
   # Then need to update the /homeassistant/configuration.yaml file to manually set the homekit params.
-  homeassistant:
-    container_name: home-assistant
-    image: homeassistant/home-assistant:stable
-    restart: unless-stopped
-    # networks:
-    #   - t2_proxy
-    network_mode: host
-    # ports:
-    #   - "$HASSIO_PORT:8123"
-    #   - "$HASSIO_HOMEKIT_PORT:51827"
-    volumes:
-      - $DOCKERDIR/homeassistant:/config
-    environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
-    # labels:
-    #   - "traefik.enable=true"
-    #   ## HTTP Routers
-    #   - "traefik.http.routers.homeassistant-rtr.entrypoints=https"
-    #   - "traefik.http.routers.homeassistant-rtr.rule=Host(`hassio.$DOMAINNAME`)"
-    #   ## Middlewares
-    #   - "traefik.http.routers.homeassistant-rtr.middlewares=chain-oauth@file"
-    #   ## HTTP Services
-    #   - "traefik.http.routers.homeassistant-rtr.service=homeassistant-svc"
-    #   - "traefik.http.services.homeassistant-svc.loadbalancer.server.port=8123"
+  # homeassistant:
+  #   container_name: home-assistant
+  #   image: homeassistant/home-assistant:stable
+  #   restart: unless-stopped
+  #   # networks:
+  #   #   - t2_proxy
+  #   network_mode: host
+  #   # ports:
+  #   #   - "$HASSIO_PORT:8123"
+  #   #   - "$HASSIO_HOMEKIT_PORT:51827"
+  #   volumes:
+  #     - $DOCKERDIR/homeassistant:/config
+  #   environment:
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     TZ: $TZ
+  #   # labels:
+  #   #   - "traefik.enable=true"
+  #   #   ## HTTP Routers
+  #   #   - "traefik.http.routers.homeassistant-rtr.entrypoints=https"
+  #   #   - "traefik.http.routers.homeassistant-rtr.rule=Host(`hassio.$DOMAINNAME`)"
+  #   #   ## Middlewares
+  #   #   - "traefik.http.routers.homeassistant-rtr.middlewares=chain-oauth@file"
+  #   #   ## HTTP Services
+  #   #   - "traefik.http.routers.homeassistant-rtr.service=homeassistant-svc"
+  #   #   - "traefik.http.services.homeassistant-svc.loadbalancer.server.port=8123"
 
   # homebridge:
   #   image: oznu/homebridge:latest

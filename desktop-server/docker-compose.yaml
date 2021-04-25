@@ -134,8 +134,11 @@ services:
     container_name: transmission-vpn
     restart: unless-stopped
     healthcheck:
-      start_period: "10s"
-      interval: "5s"
+      test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/7229c015-9f8e-4b05-b6ee-473102c86ebe"]
+      interval: 30m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     networks:
       - dsk_proxy
       # t2_proxy:
@@ -202,6 +205,12 @@ services:
       - transmission-vpn
     container_name: sabnzbd
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/724169d8-0a3a-4e25-adb2-75fe85fc97f3"]
+      interval: 30m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     network_mode: service:transmission-vpn
     security_opt:
       - no-new-privileges:true
@@ -223,6 +232,12 @@ services:
       - transmission-vpn
     container_name: jackett
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/e5570617-f65c-4dff-ac01-741b404be03d"]
+      interval: 30m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     network_mode: service:transmission-vpn
     security_opt:
       - no-new-privileges:true
@@ -241,6 +256,12 @@ services:
       - transmission-vpn
     container_name: hydra
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/3093da66-caff-4815-86a1-5d5f7116f93f"]
+      interval: 30m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     network_mode: service:transmission-vpn
     security_opt:
       - no-new-privileges:true
@@ -256,11 +277,17 @@ services:
   # Set url_base in radarr settings if using PathPrefix
   radarr:
     # image: aront/radarr #for mp4_automator support
-    image: linuxserver/radarr:preview
+    image: linuxserver/radarr:latest
     depends_on:
       - transmission-vpn
     container_name: radarr
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/b55415df-2a22-4e24-9a50-297e6bdcf964"]
+      interval: 30m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     network_mode: service:transmission-vpn
     security_opt:
       - no-new-privileges:true
@@ -280,11 +307,17 @@ services:
     # image: aront/sonarr  #for mp4_automator support
     # build:
     #   context: "./specialized_images/sonarr"
-    image: linuxserver/sonarr:preview
+    image: linuxserver/sonarr:latest
     depends_on:
       - transmission-vpn
     container_name: sonarr
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/6bf38ae6-9a69-4d41-b087-fc96c450426b"]
+      interval: 30m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     network_mode: service:transmission-vpn
     security_opt:
       - no-new-privileges:true
@@ -298,3 +331,34 @@ services:
       PUID: $PUID
       PGID: $PGID
       TZ: $TZ
+
+  # # Lazylibrarian  – Ebooks and Management
+  # lazylibrarian:
+  #   image: linuxserver/lazylibrarian
+  #   depends_on:
+  #     - transmission-vpn
+  #   container_name: lazylibrarian
+  #   restart: unless-stopped
+  #   # healthcheck:
+  #   #   test: ["CMD", "curl", "-m", "10", "--retry", "5", "https://hc-ping.com/6bf38ae6-9a69-4d41-b087-fc96c450426b"]
+  #   #   interval: 30m
+  #   #   timeout: 5s
+  #   #   retries: 3
+  #   #   start_period: 40s
+  #   # networks:
+  #   #   - t2_proxy
+  #   network_mode: service:transmission-vpn
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #  - "$LAZYLIBRARIAN_PORT:5299"
+  #   volumes:
+  #     - $DOCKERDIR/lazylibrarian:/config
+  #     - $DOCKERDIR/downloads:/downloads
+  #     # - /Volumes/Media:/nas
+  #     - $DOCKERDIR/calibre/books:/books:rw
+  #     # - "/etc/localtime:/etc/localtime:ro"
+  #   environment:
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     TZ: $TZ

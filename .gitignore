@@ -6,6 +6,8 @@
 *shared/
 *transmission-vpn/
 
+*secrets.yaml
+
 *.env
 
 # Byte-compiled / optimized / DLL files
