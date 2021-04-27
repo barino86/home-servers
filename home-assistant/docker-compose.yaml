@@ -1,13 +1,72 @@
-version: '3'
+version: '3.7'
+
+networks:
+  # hostnet:
+  #   external: true
+  #   name: host
+  hass_bridge:
+    external: true
+    name: hass_bridge
+
 services:
   homeassistant:
-    container_name: home-assistant
+    container_name: homeassistant
     image: homeassistant/home-assistant:stable
     restart: unless-stopped
     network_mode: host
+    ports:
+      - 8123:8123
     volumes:
       - $DOCKERDIR/homeassistant:/config
     environment:
       PUID: $PUID
       PGID: $PGID
       TZ: $TZ
+
+  vscode:
+    container_name: vscode
+    image: linuxserver/code-server:latest
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - "$VSCODE_PORT:8443"
+    volumes:
+      - $DOCKERDIR/vscode:/config
+      - $DOCKERDIR/homeassistant/:/ha_config
+      # - $DOCKERDIR/appdaemon/:/appdaemon
+      # - '/opt/docker-compose/:/docker-compose'
+    environment:
+      - DOCKER_MODS=stecky/mods:code-server-home-assistant
+      - HOMEASSISTANT_URL=$HOME_ASSISTANT_URL
+      - HOMEASSISTANT_TOKEN=$HOME_ASSISTANT_TOKEN
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - "$GRAFANA_PORT:3000"
+    #user: '99'
+    volumes:
+      - $DOCKERDIR/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      #- GF_SECURITY_COOKIE_SAMESITE=none
+      - GF_INSTALL_PLUGINS=neocat-cal-heatmap-panel
+
+  influxdb:
+    container_name: influxdb
+    #image: influxdb
+    image: influxdb:1.8.4-alpine
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - "$INFLUXDB_PORT:8086"
+    # user: '99'
+    volumes:
+      - $DOCKERDIR/influxdb:/var/lib/influxdb
+      - $DOCKERDIR/influxdb/conf:/etc/influxdb

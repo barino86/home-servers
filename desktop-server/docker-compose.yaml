@@ -305,8 +305,6 @@ services:
   # Set url_base in sonarr settings if using PathPrefix
   sonarr:
     # image: aront/sonarr  #for mp4_automator support
-    # build:
-    #   context: "./specialized_images/sonarr"
     image: linuxserver/sonarr:latest
     depends_on:
       - transmission-vpn
