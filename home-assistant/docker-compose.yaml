@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - $DOCKERDIR/homeassistant:/config
+      - $DOCKERDIR/ha-config:/config
     environment:
       PUID: $PUID
       PGID: $PGID
