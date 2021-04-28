@@ -28,7 +28,7 @@ services:
       - "$VSCODE_PORT:8443"
     volumes:
       - $DOCKERDIR/vscode:/config
-      - $DOCKERDIR/homeassistant:/ha_config
+      - $DOCKERDIR/ha-config:/ha_config
       - $DEVDIR/home-servers:/home-servers
       # - '/opt/docker-compose/:/docker-compose'
     environment:
