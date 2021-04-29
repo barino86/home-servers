@@ -32,9 +32,12 @@ services:
       - $DEVDIR/home-servers:/home-servers
       # - '/opt/docker-compose/:/docker-compose'
     environment:
-      - DOCKER_MODS=stecky/mods:code-server-home-assistant
-      - HOMEASSISTANT_URL=$HOME_ASSISTANT_URL
-      - HOMEASSISTANT_TOKEN=$HOME_ASSISTANT_TOKEN
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+      DOCKER_MODS: stecky/mods:code-server-home-assistant
+      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
+      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
 
   # grafana:
   #   container_name: grafana
