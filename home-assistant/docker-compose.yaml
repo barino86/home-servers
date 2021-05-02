@@ -30,6 +30,7 @@ services:
       - $DOCKERDIR/vscode:/config
       - $DOCKERDIR/ha-config:/ha_config
       - $DEVDIR/home-servers:/home-servers
+      - /var/services/homes/barino/.ssh:/config/.ssh
       # - '/opt/docker-compose/:/docker-compose'
     environment:
       PUID: $PUID
