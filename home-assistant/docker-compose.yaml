@@ -1,4 +1,4 @@
-version: '3.7'
+version: 3.7
 
 networks:
   hass_bridge:
@@ -39,6 +39,23 @@ services:
       DOCKER_MODS: stecky/mods:code-server-home-assistant
       HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
       HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
+
+  # mariadb:
+  #   container_name: mariadb
+  #   image: 'mariadb:latest'
+  #   restart: always
+  #   ports:
+  #     - "$MARIADB_PORT:3306"
+  #   volumes:
+  #     - $DOCKERDIR/mariadb:/var/lib/mysql
+  #   environment:
+  #     TZ: $TZ
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+  #     MYSQL_USER: homeassistant
+  #     MYSQL_PASSWORD: homeassistant
+  #     MYSQL_DATABASE: homeassistant
 
   # grafana:
   #   container_name: grafana
