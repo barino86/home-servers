@@ -25,12 +25,13 @@ services:
   hass-configurator:
     container_name: hass-configurator
     image: causticlab/hass-configurator-docker:latest
-    depends_on:
-      - homeassistant
+#    depends_on:
+#      - homeassistant
     restart: unless-stopped
 #    networks:
 #      - hass_bridge
-    network_mode: service:homeassistant
+#    network_mode: service:homeassistant
+    network_mode: host
     ports:
       - $HASS_CONFIGURATOR_PORT:3218/tcp
     volumes:
