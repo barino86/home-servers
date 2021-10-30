@@ -93,6 +93,7 @@ services:
       - PMA_ARBITRARY=1
 
   adminer:
+    container_name: adminer
     image: adminer:latest
     restart: unless-stopped
     networks:
