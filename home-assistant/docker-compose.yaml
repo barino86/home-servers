@@ -1,4 +1,4 @@
-version: 3.7
+version: "3.7"
 
 networks:
   hass_bridge:
@@ -10,7 +10,11 @@ services:
     container_name: homeassistant
     image: homeassistant/home-assistant:stable
     restart: unless-stopped
-    network_mode: host
+#    network_mode: host
+    networks:
+      - hass_bridge
+    ports:
+      - 8123:8123/tcp
     volumes:
       - $DOCKERDIR/ha-config:/config
     environment:
@@ -18,27 +22,43 @@ services:
       PGID: $PGID
       TZ: $TZ
 
-  vscode:
-    container_name: vscode
-    image: linuxserver/code-server:latest
+  hass-configurator:
+    container_name: hass-configurator
+    image: causticlab/hass-configurator-docker:latest
     restart: unless-stopped
-    networks:
-      - hass_bridge
+#    networks:
+#      - hass_bridge
+    network_mode: service:homeassistant
     ports:
-      - "$VSCODE_PORT:8443"
+      - $HASS_CONFIGURATOR_PORT:$HASS_CONFIGURATOR_PORT/tcp
     volumes:
-      - $DOCKERDIR/vscode:/config
-      - $DOCKERDIR/ha-config:/ha_config
-      - $DEVDIR/home-servers:/home-servers
-      - /var/services/homes/barino/.ssh:/config/.ssh
-      # - '/opt/docker-compose/:/docker-compose'
-    environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
-      DOCKER_MODS: stecky/mods:code-server-home-assistant
-      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
-      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
+      - $DOCKERDIR/configurator:/config
+      - $DOCKERDIR/ha-config:/hass-config
+      - $SSHDIR/id_ed25519:/root/.ssh/id_ed25519:ro
+      - $SSHDIR/id_ed25519.pub:/root/.ssh/id_ed25519.pub:ro
+      - $SSHDIR/known_hosts:/root/.ssh/known_hosts:rw
+
+#  vscode:
+#    container_name: vscode
+#    image: linuxserver/code-server:latest
+#    restart: unless-stopped
+#    networks:
+#      - hass_bridge
+#    ports:
+#      - "$VSCODE_PORT:8443"
+#    volumes:
+#      - $DOCKERDIR/vscode:/config
+#      - $DOCKERDIR/ha-config:/ha_config
+#      - $DEVDIR/home-servers:/home-servers
+#      - /var/services/homes/barino/.ssh:/root/.ssh
+#      # - '/opt/docker-compose/:/docker-compose'
+#    environment:
+#      PUID: $PUID
+#      PGID: $PGID
+#      TZ: $TZ
+#      DOCKER_MODS: stecky/mods:code-server-home-assistant
+#      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
+#      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
 
   # mariadb:
   #   container_name: mariadb
