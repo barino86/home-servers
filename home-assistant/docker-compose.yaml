@@ -41,28 +41,28 @@ services:
       - $SSHDIR/id_ed25519.pub:/root/.ssh/id_ed25519.pub:ro
       - $SSHDIR/known_hosts:/root/.ssh/known_hosts:rw
 
-  vscode:
-    container_name: vscode
-    image: linuxserver/code-server:latest
-    restart: unless-stopped
-    networks:
-      - hass_bridge
-    ports:
-      - $VSCODE_PORT:8443
-    volumes:
-      - $DOCKERDIR/vscode:/config
-      - $DOCKERDIR/homeassistant:/ha_config
-      - $DEVDIR/home-servers:/home-servers
-      - $SSHDIR/id_ed25519:/config/.ssh/id_ed25519:ro
-      - $SSHDIR/id_ed25519.pub:/config/.ssh/id_ed25519.pub:ro
-      - $SSHDIR/known_hosts:/config/.ssh/known_hosts:rw
-    environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
-      DOCKER_MODS: stecky/mods:code-server-home-assistant
-      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
-      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
+#  vscode:
+#    container_name: vscode
+#    image: linuxserver/code-server:latest
+#    restart: unless-stopped
+#    networks:
+#      - hass_bridge
+#    ports:
+#      - $VSCODE_PORT:8443
+#    volumes:
+#      - $DOCKERDIR/vscode:/config
+#      - $DOCKERDIR/homeassistant:/ha_config
+#      - $DEVDIR/home-servers:/home-servers
+#      - $SSHDIR/id_ed25519:/config/.ssh/id_ed25519:ro
+#      - $SSHDIR/id_ed25519.pub:/config/.ssh/id_ed25519.pub:ro
+#      - $SSHDIR/known_hosts:/config/.ssh/known_hosts:rw
+#    environment:
+#      PUID: $PUID
+#      PGID: $PGID
+#      TZ: $TZ
+#      DOCKER_MODS: stecky/mods:code-server-home-assistant
+#      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
+#      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
 
   mariadb:
    container_name: mariadb
@@ -95,14 +95,14 @@ services:
     environment:
       - PMA_ARBITRARY=1
 
-  adminer:
-    container_name: adminer
-    image: adminer:latest
-    restart: unless-stopped
-    networks:
-      - hass_bridge
-    ports:
-      - $ADMINER_PORT:8080
+#  adminer:
+#    container_name: adminer
+#    image: adminer:latest
+#    restart: unless-stopped
+#    networks:
+#      - hass_bridge
+#    ports:
+#      - $ADMINER_PORT:8080
 
   # influxdb:
   #   container_name: influxdb
@@ -133,3 +133,15 @@ services:
   #     - GF_SECURITY_ALLOW_EMBEDDING=true
   #     #- GF_SECURITY_COOKIE_SAMESITE=none
   #     - GF_INSTALL_PLUGINS=neocat-cal-heatmap-panel
+
+  nodered:
+    container_name: nodered
+    image: nodered/node-red:latest
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - $NODERED_PORT:1880
+    volumes:
+      - $DOCKERDIR/nodered:/data
+
