@@ -10,13 +10,13 @@ services:
     container_name: homeassistant
     image: homeassistant/home-assistant:stable
     restart: unless-stopped
-#    network_mode: host
-    networks:
-      - hass_bridge
+    network_mode: host
+#    networks:
+#      - hass_bridge
     ports:
-      - 8123:8123/tcp
+      - $HASS_PORT:8123/tcp
     volumes:
-      - $DOCKERDIR/ha-config:/config
+      - $DOCKERDIR/homeassistant:/config
     environment:
       PUID: $PUID
       PGID: $PGID
@@ -30,52 +30,89 @@ services:
 #      - hass_bridge
     network_mode: service:homeassistant
     ports:
-      - $HASS_CONFIGURATOR_PORT:$HASS_CONFIGURATOR_PORT/tcp
+      - $HASS_CONFIGURATOR_PORT:3218/tcp
     volumes:
       - $DOCKERDIR/configurator:/config
-      - $DOCKERDIR/ha-config:/hass-config
+      - $DOCKERDIR/homeassistant:/hass-config
       - $SSHDIR/id_ed25519:/root/.ssh/id_ed25519:ro
       - $SSHDIR/id_ed25519.pub:/root/.ssh/id_ed25519.pub:ro
       - $SSHDIR/known_hosts:/root/.ssh/known_hosts:rw
 
-#  vscode:
-#    container_name: vscode
-#    image: linuxserver/code-server:latest
-#    restart: unless-stopped
-#    networks:
-#      - hass_bridge
-#    ports:
-#      - "$VSCODE_PORT:8443"
-#    volumes:
-#      - $DOCKERDIR/vscode:/config
-#      - $DOCKERDIR/ha-config:/ha_config
-#      - $DEVDIR/home-servers:/home-servers
-#      - /var/services/homes/barino/.ssh:/root/.ssh
-#      # - '/opt/docker-compose/:/docker-compose'
-#    environment:
-#      PUID: $PUID
-#      PGID: $PGID
-#      TZ: $TZ
-#      DOCKER_MODS: stecky/mods:code-server-home-assistant
-#      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
-#      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
+  vscode:
+    container_name: vscode
+    image: linuxserver/code-server:latest
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - $VSCODE_PORT:8443
+    volumes:
+      - $DOCKERDIR/vscode:/config
+      - $DOCKERDIR/homeassistant:/ha_config
+      - $DEVDIR/home-servers:/home-servers
+      - $SSHDIR/id_ed25519:/config/.ssh/id_ed25519:ro
+      - $SSHDIR/id_ed25519.pub:/config/.ssh/id_ed25519.pub:ro
+      - $SSHDIR/known_hosts:/config/.ssh/known_hosts:rw
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+      DOCKER_MODS: stecky/mods:code-server-home-assistant
+      HOMEASSISTANT_URL: $HOME_ASSISTANT_URL
+      HOMEASSISTANT_TOKEN: $HOME_ASSISTANT_TOKEN
 
-  # mariadb:
-  #   container_name: mariadb
-  #   image: 'mariadb:latest'
-  #   restart: always
+  mariadb:
+   container_name: mariadb
+   image: mariadb:latest
+   restart: unless-stopped
+   networks:
+     - hass_bridge
+   ports:
+     - $MARIADB_PORT:3306
+#     - 3307:3307
+   volumes:
+     - $DOCKERDIR/mariadb:/var/lib/mysql
+   environment:
+#     TZ: $TZ
+#     PUID: $PUID
+#     PGID: $PGID
+     MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+     MYSQL_USER: homeassistant
+     MYSQL_PASSWORD: $MYSQL_PASSWORD
+     MYSQL_DATABASE: homeassistant
+
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - $PHPMYADMIN_PORT:80
+    environment:
+      - PMA_ARBITRARY=1
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    networks:
+      - hass_bridge
+    ports:
+      - $ADMINER_PORT:8080
+
+  # influxdb:
+  #   container_name: influxdb
+  #   #image: influxdb
+  #   image: influxdb:1.8.4-alpine
+  #   restart: unless-stopped
+  #   networks:
+  #     - hass_bridge
   #   ports:
-  #     - "$MARIADB_PORT:3306"
+  #     - "$INFLUXDB_PORT:8086"
+  #   # user: '99'
   #   volumes:
-  #     - $DOCKERDIR/mariadb:/var/lib/mysql
-  #   environment:
-  #     TZ: $TZ
-  #     PUID: $PUID
-  #     PGID: $PGID
-  #     MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
-  #     MYSQL_USER: homeassistant
-  #     MYSQL_PASSWORD: homeassistant
-  #     MYSQL_DATABASE: homeassistant
+  #     - $DOCKERDIR/influxdb:/var/lib/influxdb
+  #     - $DOCKERDIR/influxdb/conf:/etc/influxdb
 
   # grafana:
   #   container_name: grafana
@@ -92,17 +129,3 @@ services:
   #     - GF_SECURITY_ALLOW_EMBEDDING=true
   #     #- GF_SECURITY_COOKIE_SAMESITE=none
   #     - GF_INSTALL_PLUGINS=neocat-cal-heatmap-panel
-  #
-  # influxdb:
-  #   container_name: influxdb
-  #   #image: influxdb
-  #   image: influxdb:1.8.4-alpine
-  #   restart: unless-stopped
-  #   networks:
-  #     - hass_bridge
-  #   ports:
-  #     - "$INFLUXDB_PORT:8086"
-  #   # user: '99'
-  #   volumes:
-  #     - $DOCKERDIR/influxdb:/var/lib/influxdb
-  #     - $DOCKERDIR/influxdb/conf:/etc/influxdb
