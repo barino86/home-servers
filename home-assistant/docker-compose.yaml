@@ -25,6 +25,8 @@ services:
   hass-configurator:
     container_name: hass-configurator
     image: causticlab/hass-configurator-docker:latest
+    depends_on:
+      - homeassistant
     restart: unless-stopped
 #    networks:
 #      - hass_bridge
