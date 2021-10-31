@@ -6,35 +6,35 @@ networks:
     attachable: true
 
 services:
-  homeassistant:
-    container_name: homeassistant
-    image: homeassistant/home-assistant:stable
-    depends_on:
-      - mariadb
-    restart: unless-stopped
-    network_mode: host
-#    networks:
-#      - hass_bridge
-    ports:
-      - $HASS_PORT:8123/tcp
-    volumes:
-      - $DOCKERDIR/homeassistant:/config
-    environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
+#  homeassistant:
+#    container_name: homeassistant
+#    image: homeassistant/home-assistant:stable
+#    depends_on:
+#      - mariadb
+#    restart: unless-stopped
+#    network_mode: host
+##    networks:
+##      - hass_bridge
+#    ports:
+#      - $HASS_PORT:8123/tcp
+#    volumes:
+#      - $DOCKERDIR/homeassistant:/config
+#    environment:
+#      PUID: $PUID
+#      PGID: $PGID
+#      TZ: $TZ
 
   homeassistant2:
     container_name: homeassistant2
     image: homeassistant/home-assistant:stable
-    depends_on:
-      - mariadb
+#    depends_on:
+#      - mariadb
     restart: unless-stopped
     network_mode: host
     #    networks:
     #      - hass_bridge
     ports:
-      - 8124:8123/tcp
+      - 8123:8123/tcp
     volumes:
       - $DOCKERDIR/ha-config:/config
     environment:
