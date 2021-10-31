@@ -24,6 +24,24 @@ services:
       PGID: $PGID
       TZ: $TZ
 
+  homeassistant2:
+    container_name: homeassistant2
+    image: homeassistant/home-assistant:stable
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+    network_mode: host
+    #    networks:
+    #      - hass_bridge
+    ports:
+      - 8124:8123/tcp
+    volumes:
+      - $DOCKERDIR/ha-config:/config
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+
   hass-configurator:
     container_name: hass-configurator
     image: causticlab/hass-configurator-docker:latest
