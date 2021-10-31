@@ -6,37 +6,17 @@ networks:
     attachable: true
 
 services:
-#  homeassistant:
-#    container_name: homeassistant
-#    image: homeassistant/home-assistant:stable
-#    depends_on:
-#      - mariadb
-#    restart: unless-stopped
-#    network_mode: host
-##    networks:
-##      - hass_bridge
-#    ports:
-#      - $HASS_PORT:8123/tcp
-#    volumes:
-#      - $DOCKERDIR/homeassistant:/config
-#    environment:
-#      PUID: $PUID
-#      PGID: $PGID
-#      TZ: $TZ
-
-  homeassistant2:
-    container_name: homeassistant2
+  homeassistant:
+    container_name: homeassistant
     image: homeassistant/home-assistant:stable
-#    depends_on:
-#      - mariadb
+    depends_on:
+      - mariadb
     restart: unless-stopped
     network_mode: host
-    #    networks:
-    #      - hass_bridge
     ports:
-      - 8123:8123/tcp
+      - $HASS_PORT:8123/tcp
     volumes:
-      - $DOCKERDIR/ha-config:/config
+      - $DOCKERDIR/homeassistant:/config
     environment:
       PUID: $PUID
       PGID: $PGID
@@ -46,11 +26,10 @@ services:
     container_name: hass-configurator
     image: causticlab/hass-configurator-docker:latest
     depends_on:
-      - homeassistant2
+      - homeassistant
     restart: unless-stopped
     networks:
       - hass_bridge
-#    network_mode: host
     ports:
       - $HASS_CONFIGURATOR_PORT:3218/tcp
     volumes:
