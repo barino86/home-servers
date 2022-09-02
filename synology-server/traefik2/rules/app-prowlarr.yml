@@ -19,8 +19,8 @@ http:
       middlewares:
         - chain-oauth
       priority: 99
-      tls:
-        certresolver: dns-cloudflare
+#      tls:
+#        certresolver: dns-cloudflare
 
 
   services:
