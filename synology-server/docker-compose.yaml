@@ -450,11 +450,22 @@ services:
     labels:
     #   # Add hosts specified in rules here to force cf-companion to create the CNAMEs
     #   # Since cf-companion creates CNAMEs based on host rules, this a workaround for non-docker/external apps
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`hydra.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`jackett.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`nd-desk.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`prowlarr.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`radarr.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`sabnzb.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`sonarr.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`trans.$DOMAINNAME`)"
+      - >-
+        traefik.http.routers.cf-companion-rtr.rule=
+          Host(`hydra.$DOMAINNAME`) ||
+          Host(`jackett.$DOMAINNAME`) ||
+          Host(`nd-desk.$DOMAINNAME`) ||
+          Host(`prowlarr.$DOMAINNAME`) ||
+          Host(`radarr.$DOMAINNAME`) ||
+          Host(`sabnzb.$DOMAINNAME`) ||
+          Host(`sonarr.$DOMAINNAME`) ||
+          Host(`trans.$DOMAINNAME`)
+
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`hydra.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`jackett.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`nd-desk.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`prowlarr.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`radarr.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`sabnzb.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`sonarr.$DOMAINNAME`)"
+#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`trans.$DOMAINNAME`)"
