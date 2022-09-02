@@ -1,0 +1,19 @@
+http:
+  routers:
+    port-desk-rtr:
+      rule: Host(`port-desk.{{ env "DOMAINNAME" }}`)
+      service: port-desk-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      tls:
+        certresolver: dns-cloudflare
+
+  services:
+    port-desk-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:9000'
+

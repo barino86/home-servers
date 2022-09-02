@@ -1,0 +1,19 @@
+http:
+  routers:
+    plex-rtr:
+      rule: Host(`plex.{{ env "DOMAINNAME" }}`)
+      service: plex-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      tls:
+        certresolver: dns-cloudflare
+
+  services:
+    plex-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.177:32400'
+

@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.9"
 
 ########################### NETWORKS
 # docker network create t2_proxy
@@ -34,7 +34,6 @@ services:
     restart: unless-stopped
     networks:
       - socket_proxy
-        # ipv4_address: 192.168.91.254 # You can specify a static IP
     privileged: true
     ports:
      - "$SOCKET_PROXY_PORT:2375"
@@ -53,7 +52,7 @@ services:
       # Security critical
       - AUTH=0
       - SECRETS=0
-      - POST=1 # Ouroboros
+      - POST=1 # Watchtower
       # Not always needed
       - BUILD=0
       - COMMIT=0
@@ -70,12 +69,13 @@ services:
       - SESSION=0
       - SWARM=0
       - SYSTEM=0
-      - TASKS=1 # Portaienr
+      - TASKS=1 # Portainer
       - VOLUMES=1 # Portainer
 
   traefik:
     container_name: traefik
-    image: traefik:2.2.1                                                                  # the chevrotin tag refers to v2.2.x but introduced a breaking change in 2.2.2
+#    image: traefik:2.2.1
+    image: traefik:2.7
     depends_on:
       - socket-proxy
     restart: unless-stopped
@@ -83,11 +83,13 @@ services:
     # GLOBAL AND LOGS
       - --api=true
       # - --api.insecure=true
+      - --api.dashboard=true
       # - --serversTransport.insecureSkipVerify=true
       - --log=true
       - --log.level=DEBUG                                                                   # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --log.filePath=/logs/traefik.log
       - --accessLog=true
-      - --accessLog.filePath=/traefik.log
+      - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=100                                                       # Configuring a buffer of 100 lines
       - --accessLog.filters.statusCodes=400-499
       - --global.checkNewVersion=true
@@ -97,12 +99,13 @@ services:
       - --entryPoints.http.address=:80
       - --entryPoints.https.address=:443
       # Allow these IPs to set the X-Forwarded-* headers - Cloudflare IPs: https://www.cloudflare.com/ips/
-      - --entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/12,172.64.0.0/13,131.0.72.0/22
+      - --entrypoints.https.forwardedHeaders.trustedIPs=$CLOUDFLARE_IPS,$LOCAL_IPS
       - --entryPoints.traefik.address=:8080
       # Add dns-cloudflare as default certresolver for all services. Also enables TLS and no need to specify on individual services.
       - --entrypoints.https.http.tls.certresolver=dns-cloudflare
       - --entrypoints.https.http.tls.domains[0].main=$DOMAINNAME
       - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAINNAME
+      - --entrypoints.https.http.tls.options=tls-opts@file
 
     # PROVIDERS
       - --providers.docker=true
@@ -115,6 +118,7 @@ services:
       - --providers.file.directory=/rules                                                   # Load dynamic configuration from one or more .toml or .yml files in a directory.
       # - --providers.file.filename=/path/to/file                                           # Load dynamic configuration from a file.
       - --providers.file.watch=true                                                         # Only works on top level files in the rules folder
+
     # CERT RESOLVERS
       # - --certificatesResolvers.dns-cloudflare.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
       - --certificatesResolvers.dns-cloudflare.acme.email=$CLOUDFLARE_EMAIL
@@ -122,9 +126,8 @@ services:
       - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.provider=cloudflare
       - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
       - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=90        # To delay DNS check and reduce LE hitrate
-    # networks:
-    #   t2_proxy:
-    #     ipv4_address: 192.168.90.254 # You can specify a static IP
+      # - --metrics.prometheus=true
+      # - --metrics.prometheus.buckets=0.1,0.3,1.2,5.0
     networks:
       - t2_proxy
       - socket_proxy
@@ -145,26 +148,38 @@ services:
         mode: host
     volumes:
       - $DOCKERDIR/traefik2/rules:/rules
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
       - $DOCKERDIR/traefik2/acme/acme.json:/acme.json
-      - $DOCKERDIR/traefik2/traefik.log:/traefik.log
+#      - $DOCKERDIR/traefik2/traefik.log:/traefik.log
+      - $DOCKERDIR/traefik2/logs:/logs
       - $DOCKERDIR/shared:/shared
     environment:
       - CF_API_EMAIL=$CLOUDFLARE_EMAIL
       - CF_API_KEY=$CLOUDFLARE_API_KEY
+      # Passing env variables to traefik container to be able to use the variable in rules.
+      - DOMAINNAME
+      - RADARR_API_KEY
+      - SONARR_API_KEY
+      - PROWLARR_API_KEY
     labels:
       - "traefik.enable=true"
+
       # HTTP-to-HTTPS Redirect
       - "traefik.http.routers.http-catchall.entrypoints=http"
       - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
       - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
       # HTTP Routers
       - "traefik.http.routers.traefik-rtr.entrypoints=https"
       - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME`)"
       # - "traefik.http.routers.traefik-rtr.tls.certresolver=dns-cloudflare" # Comment out this line after first run of traefik to force the use of wildcard certs
+      - "traefik.http.routers.traefik-rtr.tls=true" # Some people had 404s without this
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].main=$DOMAINNAME"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.$DOMAINNAME"
+
       ## Services - API
       - "traefik.http.routers.traefik-rtr.service=api@internal"
+
       ## Middlewares
       - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file"
 
@@ -190,9 +205,12 @@ services:
       - LOG_LEVEL=info
       - LOG_FORMAT=text
       - LIFETIME=2592000 # 30 days
+      - DEFAULT_ACTION=auth
+      - DEFAULT_PROVIDER=google
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
+      - "traefik.http.routers.oauth-rtr.tls=true"
       - "traefik.http.routers.oauth-rtr.entrypoints=https"
       - "traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAINNAME`)"
       ## Middlewares
@@ -231,34 +249,6 @@ services:
       ## HTTP Services
       - "traefik.http.routers.portainer-rtr.service=portainer-svc"
       - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
-
-# # Organizr - Unified Frontend
-#   organizr:
-#     container_name: organizr
-#     image: organizrtools/organizr-v2:latest
-#     restart: unless-stopped
-#     networks:
-#       - t2_proxy
-#     security_opt:
-#       - no-new-privileges:true
-# #    ports:
-# #      - "$ORGANIZR_PORT:80"
-#     volumes:
-#       - $DOCKERDIR/organizr:/config
-#     environment:
-#       - PUID=$PUID
-#       - PGID=$PGID
-#       - TZ=$TZ
-#     labels:
-#       - "traefik.enable=true"
-#       ## HTTP Routers
-#       - "traefik.http.routers.organizr-rtr.entrypoints=https"
-#       - "traefik.http.routers.organizr-rtr.rule=Host(`$DOMAINNAME`,`www.$DOMAINNAME`)"
-#       ## Middlewares
-#       - "traefik.http.routers.organizr-rtr.middlewares=chain-oauth@file"
-#       ## HTTP Services
-#       - "traefik.http.routers.organizr-rtr.service=organizr-svc"
-#       - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
 
   # Heimdall - Unified Frontend Alternative
   # Putting all services behind Oragnizr slows things down.
@@ -321,6 +311,42 @@ services:
       ## HTTP Services
       - "traefik.http.routers.netdata-rtr.service=netdata-svc"
       - "traefik.http.services.netdata-svc.loadbalancer.server.port=19999"
+
+  # Glances - System Information
+  glances:
+    image: nicolargo/glances:latest
+    container_name: glances
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - t2_proxy
+      - socket_proxy
+      - default
+    # ports:
+    #   - "$GLANCES_PORT:61208"
+    pid: host
+    volumes:
+#      - $DOCKERDIR/appdata/glances/glances.conf:/glances/conf/glances.conf # Use this if you want to add a glances.conf file
+      - $DOCKERDIR/glances:/glances
+      - $USERDIR:/data/home:ro
+      - $MEDIADIR:/data/data:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro # Use Docker Socket Proxy instead for improved security
+    environment:
+      # GLANCES_OPT: "-C /glances/conf/glances.conf --quiet --export influxdb"
+      # GLANCES_OPT: "--export influxdb"
+      GLANCES_OPT: "-w"
+      DOCKER_HOST: tcp://socket-proxy:2375
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.glances-rtr.entrypoints=https"
+      - "traefik.http.routers.glances-rtr.rule=Host(`glances.$DOMAINNAME`)"
+      ## Middlewares
+      - "traefik.http.routers.glances-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.glances-rtr.service=glances-svc"
+      - "traefik.http.services.glances-svc.loadbalancer.server.port=61208"
 
   # Plex - Media Server
   plexms:
@@ -386,54 +412,6 @@ services:
       - "traefik.http.routers.tautulli-rtr.service=tautulli-svc"
       - "traefik.http.services.tautulli-svc.loadbalancer.server.port=8181"
 
-
-  ### See https://community.home-assistant.io/t/using-homekit-component-inside-docker/45409/32 to see how to get homekit working with this setup.
-  # Need to set the mac address in the ./avahi/homeassistant.service file, then copy it to the /etc/avahi/services/ folder
-  # Then need to run a sudo synoservice --restart avahi command to restart the avahi service.
-  # Then need to update the /homeassistant/configuration.yaml file to manually set the homekit params.
-  # homeassistant:
-  #   container_name: home-assistant
-  #   image: homeassistant/home-assistant:stable
-  #   restart: unless-stopped
-  #   # networks:
-  #   #   - t2_proxy
-  #   network_mode: host
-  #   # ports:
-  #   #   - "$HASSIO_PORT:8123"
-  #   #   - "$HASSIO_HOMEKIT_PORT:51827"
-  #   volumes:
-  #     - $DOCKERDIR/homeassistant:/config
-  #   environment:
-  #     PUID: $PUID
-  #     PGID: $PGID
-  #     TZ: $TZ
-  #   # labels:
-  #   #   - "traefik.enable=true"
-  #   #   ## HTTP Routers
-  #   #   - "traefik.http.routers.homeassistant-rtr.entrypoints=https"
-  #   #   - "traefik.http.routers.homeassistant-rtr.rule=Host(`hassio.$DOMAINNAME`)"
-  #   #   ## Middlewares
-  #   #   - "traefik.http.routers.homeassistant-rtr.middlewares=chain-oauth@file"
-  #   #   ## HTTP Services
-  #   #   - "traefik.http.routers.homeassistant-rtr.service=homeassistant-svc"
-  #   #   - "traefik.http.services.homeassistant-svc.loadbalancer.server.port=8123"
-
-  # homebridge:
-  #   image: oznu/homebridge:latest
-  #   container_name: homebridge
-  #   restart: unless-stopped
-  #   network_mode: host
-  #   environment:
-  #     TZ: $TZ
-  #     PUID: $PUID
-  #     PGID: $PGID
-  #     HOMEBRIDGE_CONFIG_UI: 1
-  #     HOMEBRIDGE_CONFIG_UI_PORT: $HOMEBRIDGEUI_PORT
-  #   volumes:
-  #     - $DOCKERDIR/homebridge:/homebridge
-  #   labels:
-  #     - "traefik.enable=false"
-
   # Cloudflare DDNS - Dynamic DNS Updater
   cf-ddns:
     container_name: cf-ddns
@@ -458,8 +436,6 @@ services:
     restart: unless-stopped
     networks:
       - socket_proxy
-    # volumes:
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TIMEZONE=$TZ
       - TRAEFIK_VERSION=2
@@ -474,10 +450,11 @@ services:
     labels:
     #   # Add hosts specified in rules here to force cf-companion to create the CNAMEs
     #   # Since cf-companion creates CNAMEs based on host rules, this a workaround for non-docker/external apps
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`nd-desk.$DOMAINNAME`)"
-      - "traefik.http.routers.cf-companion-rtr.rule=Host(`trans.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`hydra.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`jackett.$DOMAINNAME`)"
+      - "traefik.http.routers.cf-companion-rtr.rule=Host(`nd-desk.$DOMAINNAME`)"
+      - "traefik.http.routers.cf-companion-rtr.rule=Host(`prowlarr.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`radarr.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`sabnzb.$DOMAINNAME`)"
       - "traefik.http.routers.cf-companion-rtr.rule=Host(`sonarr.$DOMAINNAME`)"
+      - "traefik.http.routers.cf-companion-rtr.rule=Host(`trans.$DOMAINNAME`)"

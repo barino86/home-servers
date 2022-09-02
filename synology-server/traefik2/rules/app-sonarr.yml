@@ -1,0 +1,31 @@
+http:
+  routers:
+    sonarr-rtr-bypass:
+      rule: >-
+        Host(`sonarr.{{ env "DOMAINNAME" }}`) &&
+        ( Headers(`X-Api-Key`, `{{ env "SONARR_API_KEY" }}`) || Query(`apikey`, `{{ env "SONARR_API_KEY" }}`) )
+      service: sonarr-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-no-auth
+      priority: 100
+
+    sonarr-rtr:
+      rule: Host(`sonarr.{{ env "DOMAINNAME" }}`)
+      service: sonarr-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      priority: 99
+      tls:
+        certresolver: dns-cloudflare
+
+  services:
+    sonarr-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:8989'
+

@@ -1,0 +1,19 @@
+http:
+  routers:
+    transmission-vpn-rtr:
+      rule: Host(`trans.{{ env "DOMAINNAME" }}`)
+      service: transmission-vpn-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      tls:
+        certresolver: dns-cloudflare
+
+  services:
+    transmission-vpn-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:9091'
+

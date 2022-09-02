@@ -1,0 +1,28 @@
+http:
+  routers:
+    sabnzb-rtr:
+      rule: Host(`sabnzb.{{ env "DOMAINNAME" }}`)
+      service: sabnzb-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      priority: 99
+      tls:
+        certresolver: dns-cloudflare
+
+    sabnzb-rtr-bypass:
+      rule: 'Query(`apikey`, `72dad5ed4e5ee3150a53f54886462a4b`)'
+      service: sabnzb-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-no-auth
+      priority: 100
+
+  services:
+    sabnzb-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:8081'

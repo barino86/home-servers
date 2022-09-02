@@ -1,0 +1,18 @@
+http:
+  routers:
+    ombi-rtr:
+      rule: Host(`ombi.{{ env "DOMAINNAME" }}`)
+      service: ombi-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      tls:
+        certresolver: dns-cloudflare
+
+  services:
+    ombi-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:3579'

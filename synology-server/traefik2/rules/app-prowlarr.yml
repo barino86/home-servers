@@ -1,0 +1,31 @@
+http:
+  routers:
+    prowlarr-rtr-bypass:
+      rule: >-
+        Host(`prowlarr.{{ env "DOMAINNAME" }}`) &&
+        ( Headers(`X-Api-Key`, `{{ env "PROWLARR_API_KEY" }}`) || Query(`apikey`, `{{ env "PROWLARR_API_KEY" }}`) )
+      service: prowlarr-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-no-auth
+      priority: 100
+
+    prowlarr-rtr:
+      rule: Host(`prowlarr.{{ env "DOMAINNAME" }}`)
+      service: prowlarr-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      priority: 99
+      tls:
+        certresolver: dns-cloudflare
+
+
+  services:
+    prowlarr-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:9696'

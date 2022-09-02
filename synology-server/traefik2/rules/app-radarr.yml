@@ -1,0 +1,31 @@
+http:
+  routers:
+    radarr-rtr-bypass:
+      rule: >-
+        Host(`radarr.{{ env "DOMAINNAME" }}`) &&
+        ( Headers(`X-Api-Key`, `{{ env "RADARR_API_KEY" }}`) || Query(`apikey`, `{{ env "RADARR_API_KEY" }}`) )
+      service: radarr-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-no-auth
+      priority: 100
+
+    radarr-rtr:
+      rule: Host(`radarr.{{ env "DOMAINNAME" }}`)
+      service: radarr-svc
+      entryPoints:
+        - https
+      middlewares:
+        - chain-oauth
+      priority: 99
+      tls:
+        certresolver: dns-cloudflare
+
+  services:
+    radarr-svc:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: 'http://192.168.1.200:7979'
+
