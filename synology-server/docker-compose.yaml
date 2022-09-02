@@ -460,12 +460,3 @@ services:
           Host(`sabnzb.$DOMAINNAME`) ||
           Host(`sonarr.$DOMAINNAME`) ||
           Host(`trans.$DOMAINNAME`)
-
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`hydra.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`jackett.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`nd-desk.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`prowlarr.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`radarr.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`sabnzb.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`sonarr.$DOMAINNAME`)"
-#      - "traefik.http.routers.cf-companion-rtr.rule=Host(`trans.$DOMAINNAME`)"
