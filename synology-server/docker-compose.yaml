@@ -293,6 +293,7 @@ services:
       - no-new-privileges:true
     ports:
       - "3000:3000"
+    user: "$PUID:$PGID"
     volumes:
       - $DOCKERDIR/grafana/data:/var/lib/grafana
       - $DOCKERDIR/grafana/provisioning:/etc/grafana/provisioning/
@@ -300,7 +301,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=$GF_SECURITY_ADMIN_PASSWORD
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
-    user: "104"
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
