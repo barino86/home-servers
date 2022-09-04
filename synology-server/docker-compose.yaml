@@ -261,6 +261,7 @@ services:
       - no-new-privileges:true
     ports:
       - "9090:9090"
+    user: "$PUID:$PGID"
     volumes:
       - $DOCKERDIR/prometheus/config:/etc/prometheus/
       - $DOCKERDIR/prometheus/data:/prometheus
